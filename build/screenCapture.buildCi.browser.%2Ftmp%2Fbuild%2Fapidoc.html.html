@@ -1,0 +1,302 @@
+<html><head></head><body><div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a href="https://github.com/rejahrehim/gulp-hologram">gulp-hologram (v1.2.0)</a>
+</h1>
+<h4>Generate Hologram style guides with Gulp</h4>
+<div class="apidocSectionDiv"><a href="#apidoc.tableOfContents" id="apidoc.tableOfContents"><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-hologram">module gulp-hologram</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-hologram.gulp-hologram">
+            function <span class="apidocSignatureSpan"></span>gulp-hologram
+            <span class="apidocSignatureSpan">(opts)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-hologram.toString">
+            function <span class="apidocSignatureSpan">gulp-hologram.</span>toString
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-hologram.toString">module gulp-hologram.toString</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-hologram.toString.toString">
+            function <span class="apidocSignatureSpan">gulp-hologram.</span>toString
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-hologram" id="apidoc.module.gulp-hologram">module gulp-hologram</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-hologram.gulp-hologram" id="apidoc.element.gulp-hologram.gulp-hologram">
+        function <span class="apidocSignatureSpan"></span>gulp-hologram
+        <span class="apidocSignatureSpan">(opts)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function gulpHologram(opts) {
+  "use strict";
+  opts = opts || {};
+  var args = [],
+    stream = new Stream.PassThrough({objectMode: true}),
+    hologramExecutable = "hologram";
+
+  if (opts.bundler) {
+    hologramExecutable = "bundle";
+    args = ["exec", "hologram"];
+    // check bundle command exist
+    try {
+      hologramExecutable = which(hologramExecutable);
+    } catch (err) {
+      throw new PluginError(PLUGIN_NAME,
+        "\nYou need to have Bundler installed in your PATH for this task to work.\n" +
+        "\nsudo gem install bundler\n"
+        );
+    }
+  }
+  // check Hologram command exist
+  try {
+    hologramExecutable = which(hologramExecutable);
+  } catch (err) {
+    throw new PluginError(PLUGIN_NAME,
+      "\nYou need to have Hologram installed in your PATH for this task to work.\n" +
+      "\nsudo gem install hologram\n"
+      );
+  }
+
+  // Run hologram
+  stream._transform = function (file, unused, cb) {
+
+    // Null check config file path from source
+
+    if (file.isNull()) {
+      stream.push(file);
+      return cb();
+    } else {
+      var ext = path.extname(file.path);
+
+      if (opts.logging) {
+        log("Config file extension:", ext);
+      }
+
+      //Passing config path of hologram to args
+      args.push(file.path);
+
+      if (ext !== ".yml") {
+        throw new PluginError(PLUGIN_NAME,
+          "\nYou must provide a path to your yml hologram config file as source.\n"
+          );
+      }
+    }
+
+    // spawn program
+    if (opts.logging) {
+      log("Running command:", hologramExecutable, args);
+    }
+    var program = spawn(hologramExecutable, args);
+
+    // listen to stderr and emit errors if any
+    var errBuffer = new Buffer(0);
+    program.stderr.on("readable", function () {
+      var chunk;
+      while (chunk = program.stderr.read()) {
+        errBuffer = Buffer.concat([
+          errBuffer,
+          chunk
+        ], errBuffer.length + chunk.length);
+      }
+    });
+
+    program.stderr.on("end", function () {
+      if (errBuffer.length) {
+        stream.emit("error", new PluginError(PLUGIN_NAME,
+          errBuffer.toString("utf-8")));
+      }
+    });
+
+    // check if we have a buffer or stream
+    if (file.contents instanceof Buffer) {
+
+      // create buffer
+      var newBuffer = new Buffer(0);
+
+      // when program receives data add it to buffer
+      program.stdout.on("readable", function () {
+        var chunk;
+        while (chunk = program.stdout.read()) {
+          newBuffer = Buffer.concat([
+            newBuffer,
+            chunk
+          ], newBuffer.length + chunk.length);
+        }
+      });
+
+      // when program finishes call callback
+      program.stdout.on("end", function () {
+        file.contents = newBuffer;
+        stream.push(file);
+        cb();
+      });
+
+      // "execute"
+      // write file buffer to program
+      program.stdin.write(file.contents, function () {
+        program.stdin.end();
+      });
+
+    } else { // assume we have a stream.Readable
+
+      // stream away!
+      file.contents = file.contents
+        .pipe(new Duplexer(program.stdin, program.stdout));
+
+      stream.push(file);
+      cb();
+    }
+  };
+  return stream;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-hologram.toString" id="apidoc.element.gulp-hologram.toString">
+        function <span class="apidocSignatureSpan">gulp-hologram.</span>toString
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">toString = function () {
+    return text;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+  ], errBuffer.length + chunk.length);
+}
+    });
+
+    program.stderr.on("end", function () {
+if (errBuffer.length) {
+  stream.emit("error", new PluginError(PLUGIN_NAME,
+    errBuffer.<span class="apidocCodeKeywordSpan">toString</span>("utf-8")));
+}
+    });
+
+    // check if we have a buffer or stream
+    if (file.contents instanceof Buffer) {
+
+// create buffer
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-hologram.toString" id="apidoc.module.gulp-hologram.toString">module gulp-hologram.toString</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-hologram.toString.toString" id="apidoc.element.gulp-hologram.toString.toString">
+        function <span class="apidocSignatureSpan">gulp-hologram.</span>toString
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function toString() { [native code] }</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+  ], errBuffer.length + chunk.length);
+}
+    });
+
+    program.stderr.on("end", function () {
+if (errBuffer.length) {
+  stream.emit("error", new PluginError(PLUGIN_NAME,
+    errBuffer.<span class="apidocCodeKeywordSpan">toString</span>("utf-8")));
+}
+    });
+
+    // check if we have a buffer or stream
+    if (file.contents instanceof Buffer) {
+
+// create buffer
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
+</body></html>
