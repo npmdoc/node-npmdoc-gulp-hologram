@@ -1,4 +1,7 @@
-# api documentation for  [gulp-hologram (v1.2.0)](https://github.com/rejahrehim/gulp-hologram)  [![npm package](https://img.shields.io/npm/v/npmdoc-gulp-hologram.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-gulp-hologram) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-gulp-hologram.svg)](https://travis-ci.org/npmdoc/node-npmdoc-gulp-hologram)
+# npmdoc-gulp-hologram
+
+#### api documentation for  [gulp-hologram (v1.2.0)](https://github.com/rejahrehim/gulp-hologram)  [![npm package](https://img.shields.io/npm/v/npmdoc-gulp-hologram.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-gulp-hologram) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-gulp-hologram.svg)](https://travis-ci.org/npmdoc/node-npmdoc-gulp-hologram)
+
 #### Generate Hologram style guides with Gulp
 
 [![NPM](https://nodei.co/npm/gulp-hologram.png?downloads=true&downloadRank=true&stars=true)](https://www.npmjs.com/package/gulp-hologram)
@@ -70,7 +73,8 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "version": "1.2.0"
+    "version": "1.2.0",
+    "bin": {}
 }
 ```
 
